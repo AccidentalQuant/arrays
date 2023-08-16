@@ -13,7 +13,7 @@ df = pd.DataFrame(arr)
 
 
 t1 = time.time()
-arr2 = au.rolling_mean(arr, 20, 1)
+arr2 = au.rolling_mean(arr, 20, min_periods=1)
 
 t2 = time.time()
 df_mean = df.rolling(20, min_periods=1).mean()

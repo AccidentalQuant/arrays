@@ -74,8 +74,8 @@ long in_row_stride, long in_col_stride, long out_row_stride, long out_col_stride
   for (long i = 0; i < num_threads_actual; ++i) {
     long col_start = (i < rem) ? (cols_per_thread + 1) * i : cols_per_thread * i + rem;
     long col_end = col_start + cols_per_thread + ((i < rem) ? 1 : 0);
-    threads.emplace_back(calc_rolling_mean, in, out, window, min_periods, num_rows, num_cols, in_row_stride, in_col_stride,
-                      out_row_stride, out_col_stride, col_start, col_end);
+    threads.emplace_back(calc_rolling_mean, in, out, window, min_periods, num_rows, num_cols, in_row_stride,
+                         in_col_stride, out_row_stride, out_col_stride, col_start, col_end);
   }
 
   for (auto& thread : threads) {
