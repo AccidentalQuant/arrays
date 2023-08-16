@@ -16,12 +16,12 @@ class OneDimArray:
         return self.path.parent / metadata_filename
 
     @staticmethod
-    def _get_metadata(array: np.ndarray) -> dict:
-        return {"dtype": array.dtype.name, "ndim": array.ndim, "size": array.size}
+    def _construct_metadata(array: np.ndarray) -> dict:
+        return {"dtype": array.dtype.name, "size": array.size}
 
-    def _load_metadata(self) -> dict:
+    def _update_metadata(self) -> None:
         with open(self.metadata_path, "r") as f:
-            return json.load(f)
+            self.metadata = json.load(f)
 
     def _dump_metadata(self) -> None:
         with open(self.metadata_path, "w") as f:
@@ -33,11 +33,11 @@ class OneDimArray:
         if array.ndim != 1:
             raise ValueError("`array` must be 1D")
         array.tofile(self.path)
-        self.metadata = self._get_metadata(array)
+        self.metadata = self._construct_metadata(array)
         self._dump_metadata()
 
     def load(self, offset=0, count=-1) -> np.ndarray:
-        self.metadata = self._load_metadata()
+        self._update_metadata()
         return np.fromfile(self.path, dtype=self.metadata["dtype"], count=count, offset=offset)
 
     def append(self, array: np.ndarray):
@@ -46,7 +46,7 @@ class OneDimArray:
             return
         if array.ndim != 1:
             raise ValueError("`array` must be 1D")
-        self.metadata = self._load_metadata()
+        self._update_metadata()
         dtype = self.metadata["dtype"]
         dtype_new = array.dtype.name
         if dtype != dtype_new:
@@ -57,6 +57,17 @@ class OneDimArray:
         with open(self.path, "ab") as f:
             f.write(array.tobytes())
 
+    def delete_end(self, del_count: int):
+        if del_count <= 0:
+            raise ValueError("`del_count` must be positive")
+        self._update_metadata()
+        new_size = max(self.metadata["size"] - del_count, 0)
+        num_bytes = np.dtype(self.metadata["dtype"]).itemsize * new_size
+        with open(self.path, "ab") as f:
+            f.truncate(num_bytes)
+        self.metadata["size"] = new_size
+        self._dump_metadata()
+
 
 if __name__ == "__main__":
     OUTPUT_DIR = Path(__file__).parent / "data"
@@ -65,10 +76,21 @@ if __name__ == "__main__":
 
     arr = OneDimArray(array_path)
     arr.dump(np.arange(10), overwrite=True)
+    print(arr.metadata)
     print(arr.load())
+    print()
 
     arr.append(np.arange(5))
+    print(arr.metadata)
     print(arr.load())
+    print()
 
-    arr.append(np.arange(3))
+    arr.delete_end(5)
+    print(arr.metadata)
     print(arr.load())
+    print()
+
+    arr.delete_end(12)
+    print(arr.metadata)
+    print(arr.load())
+    print()
