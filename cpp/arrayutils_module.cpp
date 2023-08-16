@@ -109,39 +109,43 @@ static PyObject* rolling_mean(PyObject* self, PyObject* args, PyObject* kwargs) 
     num_threads = std::thread::hardware_concurrency();
   }
 
-  PyObject* array_py = PyArray_FROM_OTF(array_arg, NPY_FLOAT64, NPY_ARRAY_ALIGNED);
-  auto* array = reinterpret_cast<PyArrayObject*>(array_py);
+  PyObject* in_array_py = PyArray_FROM_OTF(array_arg, NPY_FLOAT64, NPY_ARRAY_ALIGNED);
+  auto* in_array = reinterpret_cast<PyArrayObject*>(in_array_py);
 
-  if (PyArray_NDIM(array) != 2) {
+  if (PyArray_NDIM(in_array) != 2) {
     PyErr_SetString(PyExc_ValueError, "`array` must be a 2D array");
-    Py_DECREF(array_py);
+    Py_DECREF(in_array_py);
     return nullptr;
   }
 
-  npy_intp* dims = PyArray_DIMS(array);
-  npy_intp* strides = PyArray_STRIDES(array);
+  npy_intp* dims = PyArray_DIMS(in_array);
+  npy_intp* strides = PyArray_STRIDES(in_array);
 
   long num_rows = dims[0];
   long num_cols = dims[1];
-  long row_stride = strides[0] / sizeof(npy_float64);
-  long col_stride = strides[1] / sizeof(npy_float64);
+  long in_row_stride = strides[0] / sizeof(npy_float64);
+  long in_col_stride = strides[1] / sizeof(npy_float64);
+  int is_fortran = in_col_stride > in_row_stride;
+  long out_row_stride = is_fortran ? 1 : num_cols;
+  long out_col_stride = is_fortran ? num_rows : 1;
+  PyArray_Descr* descr = PyArray_DescrFromType(NPY_FLOAT64);
 
-  const auto* data_in = reinterpret_cast<const npy_float64*>(PyArray_DATA(array));
+  const auto* in_ptr = reinterpret_cast<const npy_float64*>(PyArray_DATA(in_array));
 
-  PyObject* array_out_py = PyArray_SimpleNew(2, dims, NPY_FLOAT64);
-  auto* data_out = reinterpret_cast<npy_float64*>(PyArray_DATA(reinterpret_cast<PyArrayObject*>(array_out_py)));
+  PyObject* out_array_py = PyArray_NewFromDescr(&PyArray_Type, descr, 2, dims, nullptr, nullptr, is_fortran, nullptr);
+  auto* out_ptr = reinterpret_cast<npy_float64*>(PyArray_DATA(reinterpret_cast<PyArrayObject*>(out_array_py)));
 
   if (num_threads == 1) {
-    calc_rolling_mean(data_in, data_out, window, min_periods, num_rows, num_cols, row_stride,
-                      col_stride, num_cols, 1, 0, num_cols);
+    calc_rolling_mean(in_ptr, out_ptr, window, min_periods, num_rows, num_cols, in_row_stride,
+                      in_col_stride, out_row_stride, out_col_stride, 0, num_cols);
   }
   else {
-    calc_rolling_mean_parallel(data_in, data_out, window, min_periods, num_rows, num_cols, row_stride,
-                               col_stride, num_cols, 1, num_threads);
+    calc_rolling_mean_parallel(in_ptr, out_ptr, window, min_periods, num_rows, num_cols, in_row_stride,
+                               in_col_stride, out_row_stride, out_col_stride, num_threads);
   }
 
-  Py_DECREF(array_py);
-  return array_out_py;
+  Py_DECREF(in_array_py);
+  return out_array_py;
 }
 
 static PyMethodDef arrayutils_methods[] = {
