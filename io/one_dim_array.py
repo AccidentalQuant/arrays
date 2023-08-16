@@ -36,9 +36,10 @@ class OneDimArray:
         self.metadata = self._construct_metadata(array)
         self._dump_metadata()
 
-    def load(self, offset=0, count=-1) -> np.ndarray:
+    def load(self, start=0, count=-1) -> np.ndarray:
         self._update_metadata()
-        return np.fromfile(self.path, dtype=self.metadata["dtype"], count=count, offset=offset)
+        dtype = np.dtype(self.metadata["dtype"])
+        return np.fromfile(self.path, dtype=dtype, count=count, offset=start * dtype.itemsize)
 
     def append(self, array: np.ndarray):
         if not os.path.exists(self.path):
@@ -76,21 +77,20 @@ if __name__ == "__main__":
 
     arr = OneDimArray(array_path)
     arr.dump(np.arange(10), overwrite=True)
-    print(arr.metadata)
-    print(arr.load())
+    print("Dumped [0 1 2 ... 9]")
+    print(f"metadata: {arr.metadata}")
+    print(f"array: {arr.load()}")
     print()
 
     arr.append(np.arange(5))
-    print(arr.metadata)
-    print(arr.load())
+    print("Appended [0 1 2 3 4]")
+    print(f"metadata: {arr.metadata}")
+    print(f"array: {arr.load()}")
+    print(f"array (start=3, count=5): {arr.load(3, 5)}")
     print()
 
-    arr.delete_end(5)
-    print(arr.metadata)
-    print(arr.load())
-    print()
-
-    arr.delete_end(12)
-    print(arr.metadata)
-    print(arr.load())
+    arr.delete_end(7)
+    print("Deleted 7 elements")
+    print(f"metadata: {arr.metadata}")
+    print(f"array: {arr.load()}")
     print()
