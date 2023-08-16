@@ -76,21 +76,26 @@ if __name__ == "__main__":
     array_path = OUTPUT_DIR / "array1"
 
     arr = OneDimArray(array_path)
+    a = np.arange(10)
     arr.dump(np.arange(10), overwrite=True)
-    print("Dumped [0 1 2 ... 9]")
+    print(f"Dumped {a}")
     print(f"metadata: {arr.metadata}")
     print(f"array: {arr.load()}")
     print()
 
-    arr.append(np.arange(5))
-    print("Appended [0 1 2 3 4]")
+    a2 = np.arange(5)
+    arr.append(a2)
+    start = 3
+    count = 5
+    print(f"Appended {a2}")
     print(f"metadata: {arr.metadata}")
     print(f"array: {arr.load()}")
-    print(f"array (start=3, count=5): {arr.load(3, 5)}")
+    print(f"array (start={start}, count={count}): {arr.load(start, count)}")
     print()
 
-    arr.delete_end(7)
-    print("Deleted 7 elements")
+    del_count = 7
+    arr.delete_end(del_count)
+    print(f"Deleted {del_count} elements")
     print(f"metadata: {arr.metadata}")
     print(f"array: {arr.load()}")
     print()
