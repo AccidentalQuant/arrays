@@ -185,7 +185,7 @@ if __name__ == "__main__":
     num_cols = 5000
     size = num_rows * num_cols
     arr_1d = np.random.random(size)
-    arr_1d[np.random.choice(size, size // 5, False)] = np.nan
+    arr_1d[np.random.choice(size, size // 5, False)] = np.nan  # set 1/5 of the elements to nan
 
     order = 'F'
     print(f"[Order = '{order}']")
