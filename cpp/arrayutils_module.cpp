@@ -100,6 +100,7 @@ long in_row_stride, long in_col_stride, long out_row_stride, long out_col_stride
 static void calc_rolling_mean_parallel
 (const npy_float64* in, npy_float64* out, long window, long min_periods, long num_rows, long num_cols,
 long in_row_stride, long in_col_stride, long out_row_stride, long out_col_stride, long num_threads) {
+  // TODO: use thread pool
   long num_threads_actual = std::min(num_cols, num_threads);
   long cols_per_thread = num_cols / num_threads_actual;
   long rem = num_cols % num_threads_actual;
@@ -227,6 +228,7 @@ long out_row_stride, long out_col_stride, long row_start, long row_end) {
 static void calc_rank_parallel
 (const npy_float64* in, npy_float64* out, long num_rows, long num_cols, long in_row_stride, long in_col_stride,
 long out_row_stride, long out_col_stride, long num_threads) {
+  // TODO: use thread pool
   long num_threads_actual = std::min(num_rows, num_threads);
   long rows_per_thread = num_rows / num_threads_actual;
   long rem = num_rows % num_threads_actual;
